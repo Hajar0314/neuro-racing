@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuroévolution Racing</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Bibliothèques -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+
+    <!-- Scripts du Projet -->
+    <script src="js/globals.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/Random.js"></script>
+    <script src="js/NeuralNetwork.js"></script>
+    <script src="js/BrainStorage.js"></script>
+    <script src="js/Settings.js"></script>
+    <script src="js/Sound.js"></script>
+    <script src="js/Effects.js"></script>
+    <script src="js/Ray.js"></script>
+    <script src="js/Track.js"></script>
+    <script src="js/Vehicle.js"></script>
+    <script src="js/Car.js"></script>
+    <script src="js/Genetic.js"></script>
+    <script src="js/MultiTrack.js"></script>
+    <script src="js/Generalization.js"></script>
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <header class="topbar">
+        <div>
+            <h1>Neuro Racing</h1>
+        </div>
+        <button id="settingsToggle" class="icon-button" type="button"
+            aria-expanded="true" aria-controls="settingsPanel">Masquer les réglages</button>
+        <button id="soundButton" class="icon-button sound-button" type="button"
+            aria-pressed="true" aria-label="Couper le son" title="Son activé / coupé">🔊</button>
+    </header>
+
+    <section class="analysis-panel learning-panel">
+        <button id="learningToggle" class="analysis-toggle" type="button" aria-expanded="false"
+            aria-controls="learningContent">Courbe d’apprentissage <span>+</span></button>
+        <div id="learningContent" class="analysis-content" hidden>
+            <p class="chart-legend"><span class="legend-average"></span> Score moyen
+                <span class="legend-best"></span> Meilleur score</p>
+            <canvas id="learningChart" width="720" height="400"
+                aria-label="Évolution du score moyen et du meilleur score par génération"></canvas>
+            <p id="learningSummary" class="analysis-hint">Les résultats apparaîtront à la fin de la première génération.</p>
+            <div class="button-row">
+                <button id="exportLearningCsv" class="secondary" type="button" disabled>Exporter la courbe (CSV)</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="analysis-panel network-panel">
+        <button id="networkToggle" class="analysis-toggle" type="button" aria-expanded="false"
+            aria-controls="networkContent">Réseau du meilleur agent <span>+</span></button>
+        <div id="networkContent" class="analysis-content" hidden>
+            <p id="networkSummary" class="analysis-hint">Le diagramme affiche les poids du meilleur agent courant.</p>
+            <div id="networkDiagram" class="network-diagram"
+                role="img" aria-label="Diagramme interactif des couches et connexions du réseau de neurones"></div>
+            <p id="networkTooltip" class="analysis-hint network-tooltip" aria-live="polite">
+                Survole un neurone ou une connexion pour inspecter son activation ou son poids.
+            </p>
+        </div>
+    </section>
+
+    <div id="trackEditorToolbar" class="editor-toolbar" hidden>
+        <span>Dessine une boucle fermée à la souris</span>
+        <span id="trackEditorMessage" class="editor-message error" role="alert" hidden></span>
+        <button id="finishTrackButton" type="button">Terminer le circuit</button>
+        <button id="cancelTrackButton" class="secondary" type="button">Annuler</button>
+    </div>
+
+    <aside id="settingsPanel" class="settings-panel" aria-label="Réglages de simulation">
+        <section class="panel-section">
+            <h2>Entraînement</h2>
+            <div class="button-row">
+                <button id="trainingToggle" type="button">Pause</button>
+                <button id="saveGenerationButton" class="secondary" type="button">Archiver le top</button>
+            </div>
+            <div class="control-group">
+                <label for="speedSlider">Vitesse maximale <output id="speedVal">6</output></label>
+                <input type="range" id="speedSlider" min="2" max="20" value="6" step="1">
+            </div>
+            <div class="control-group">
+                <label for="accelerationSlider">Accélération / force <output id="accelerationVal">0.5</output></label>
+                <input type="range" id="accelerationSlider" min="0.1" max="2" value="0.5" step="0.1">
+            </div>
+            <div class="control-group">
+                <label for="stepsSlider">Cycles par image · vitesse ×<output id="stepsVal">1</output></label>
+                <input type="range" id="stepsSlider" min="1" max="10" value="1" step="1">
+            </div>
+            <div class="control-group">
+                <label for="populationSlider">Voitures par génération <output id="populationVal">50</output></label>
+                <input type="range" id="populationSlider" min="20" max="100" value="50" step="10">
+            </div>
+            <div class="control-group">
+                <label for="mutationSlider">Taux de mutation <output id="mutationVal">15 %</output></label>
+                <input type="range" id="mutationSlider" min="1" max="50" value="15" step="1">
+            </div>
+            <div class="control-group">
+                <label for="crossoverSlider">Taux de croisement <output id="crossoverVal">70 %</output></label>
+                <input type="range" id="crossoverSlider" min="0" max="100" value="70" step="5">
+            </div>
+            <div class="control-group">
+                <label for="successSlider">Seuil de réussite <output id="successVal">60 %</output></label>
+                <input type="range" id="successSlider" min="40" max="100" value="60" step="5">
+            </div>
+            <div class="control-group seed-group">
+                <label for="seedInput">Graine aléatoire</label>
+                <div class="seed-row">
+                    <input type="text" id="seedInput" inputmode="numeric" autocomplete="off"
+                        placeholder="Automatique" aria-describedby="seedUsed seedHint">
+                    <button id="replaySeedButton" class="secondary" type="button">Rejouer</button>
+                </div>
+                <output id="seedUsed" class="seed-used" aria-live="polite"></output>
+                <p id="seedHint" class="analysis-hint">Une graine fixe le hasard de l’évolution (poids initiaux,
+                    mutations, croisements, départs). Même graine et mêmes réglages : même expérience.
+                    Pour comparer deux réglages, garde la même graine et change un seul réglage.
+                    Valider une graine relance l’entraînement ; champ vide : graine tirée au hasard.</p>
+            </div>
+        </section>
+
+        <section class="panel-section">
+            <h2>Cerveau & circuit</h2>
+            <div class="control-group">
+                <label for="neuronsSlider">Neurones cachés <output id="neuronsVal">20</output></label>
+                <input type="range" id="neuronsSlider" min="4" max="64" value="20" step="1">
+            </div>
+            <div class="control-group">
+                <label for="activationSelect">Activation de la couche cachée</label>
+                <select id="activationSelect">
+                    <option value="sigmoid">Sigmoïde</option>
+                    <option value="tanh">Tanh</option>
+                    <option value="relu">ReLU</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="trackSelect">Circuit</label>
+                <select id="trackSelect">
+                    <option value="easy">Débutant · ovale fluide</option>
+                    <option value="medium">Intermédiaire · virages alternés</option>
+                    <option value="technical">Expert · tracé technique</option>
+                    <option value="custom">Mon circuit dessiné</option>
+                </select>
+            </div>
+            <label class="check-control" for="multiTrackToggle">
+                <input type="checkbox" id="multiTrackToggle">
+                <span>Entraîner sur plusieurs circuits</span>
+            </label>
+            <fieldset id="multiTrackOptions" class="multi-track-options" hidden>
+                <legend>Circuits d’entraînement</legend>
+                <label class="check-control" for="multiTrack-easy">
+                    <input type="checkbox" id="multiTrack-easy" checked>
+                    <span>Débutant</span>
+                </label>
+                <label class="check-control" for="multiTrack-medium">
+                    <input type="checkbox" id="multiTrack-medium" checked>
+                    <span>Intermédiaire</span>
+                </label>
+                <label class="check-control" for="multiTrack-technical">
+                    <input type="checkbox" id="multiTrack-technical" checked>
+                    <span>Expert</span>
+                </label>
+                <p class="analysis-hint">Chaque génération court tous les circuits cochés avec les mêmes cerveaux ;
+                    le score est la moyenne, et seule une voiture qui boucle tous les circuits est réussie.
+                    Décoche un circuit (ou dessine le tien) pour le garder comme circuit inédit et vérifier,
+                    en course, que les cerveaux ne connaissent pas seulement un tracé.</p>
+            </fieldset>
+            <div class="button-row editor-actions">
+                <button id="drawTrackButton" class="secondary" type="button">Dessiner un circuit</button>
+                <button id="resetTrackButton" class="secondary" type="button">Réinitialiser l’éditeur</button>
+            </div>
+            <div class="control-group">
+                <label for="diffSlider">Complexité des virages <output id="diffVal">12</output></label>
+                <input type="range" id="diffSlider" min="1" max="50" value="12" step="1">
+            </div>
+            <div class="control-group">
+                <label for="widthSlider">Largeur de piste <output id="widthVal">100</output></label>
+                <input type="range" id="widthSlider" min="35" max="150" value="100" step="5">
+            </div>
+            <label class="check-control" for="debugToggle">
+                <input type="checkbox" id="debugToggle">
+                <span>Debug des capteurs et distances</span>
+            </label>
+        </section>
+
+        <section class="panel-section">
+            <h2>Son & effets</h2>
+            <label class="check-control" for="soundToggle">
+                <input type="checkbox" id="soundToggle" checked>
+                <span>Sons (moteur, collisions, arrivées)</span>
+            </label>
+            <div class="control-group">
+                <label for="volumeSlider">Volume <output id="volumeVal">50 %</output></label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="50" step="5">
+            </div>
+            <label class="check-control" for="effectsToggle">
+                <input type="checkbox" id="effectsToggle" checked>
+                <span>Effets visuels (étincelles, fumée, confettis)</span>
+            </label>
+        </section>
+
+        <section class="panel-section">
+            <div class="section-heading">
+                <h2>Cerveaux entraînés</h2>
+                <span id="brainCount" class="count-badge">0</span>
+            </div>
+            <div class="control-group">
+                <label for="raceTrackSelect">Circuit de la course</label>
+                <select id="raceTrackSelect">
+                    <option value="auto">Celui de l’entraînement</option>
+                    <option value="easy">Débutant · ovale fluide</option>
+                    <option value="medium">Intermédiaire · virages alternés</option>
+                    <option value="technical">Expert · tracé technique</option>
+                    <option value="custom">Mon circuit dessiné</option>
+                </select>
+            </div>
+            <div class="button-row">
+                <button id="selectAllBrains" class="secondary" type="button">Tout sélectionner</button>
+                <button id="raceButton" type="button" disabled>Lancer la course</button>
+            </div>
+            <div id="brainList" class="brain-list">
+                <p class="empty-state">Les meilleurs réseaux seront archivés à chaque génération.</p>
+            </div>
+            <div id="raceResults" class="race-results" aria-live="polite"></div>
+            <div class="button-row import-export">
+                <button id="exportBrains" class="secondary" type="button">Exporter JSON</button>
+                <label class="file-button secondary" for="importBrains">Importer JSON</label>
+                <input id="importBrains" type="file" accept="application/json,.json">
+            </div>
+            <button id="clearBrains" class="danger-button" type="button">
+                Effacer tous les cerveaux enregistrés
+            </button>
+        </section>
+        <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+    </aside>
+
+    <div id="raceBanner" class="race-banner" hidden>
+        <div class="race-banner-head">
+            <span>COURSE DES CERVEAUX</span>
+            <span id="raceTimer" class="race-timer" role="timer" aria-label="Chronomètre de la course">0:00.00</span>
+            <button id="exitRaceButton" class="secondary" type="button">Retour à l’entraînement</button>
+        </div>
+        <p id="raceTrackInfo" class="race-track-info" aria-live="polite"></p>
+        <ol id="raceRanking" class="race-ranking" aria-label="Classement au temps de tour"></ol>
+    </div>
+    <div id="hud" class="hud" aria-live="polite"></div>
+    <div id="canvas-container"></div>
+</body>
+
+
+</html>
