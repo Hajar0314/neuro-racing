@@ -3,13 +3,23 @@
 **Projet :** apprentissage par neuroévolution de voitures autonomes<br>
 **Réalisé par :** HAJAR BELHACHMI<br>
 **Formation :** Master IA2, Université Côte d’Azur<br>
-**Année universitaire :** 2026/2027
+**Année universitaire :** 2026/2027<br>
+**Application en ligne :** [hajar0314.github.io/neuro-racing](https://hajar0314.github.io/neuro-racing/)<br>
+**Vidéo de démonstration :** [youtu.be/fpwgSVcrv1M](https://youtu.be/fpwgSVcrv1M)
 
 ## Résumé
 
 Neuro Racing est une simulation pédagogique dans laquelle une population de voitures apprend à parcourir un circuit fermé. Chaque voiture reçoit des mesures de son environnement produites par cinq rayons de perception et sa vitesse, puis transmet ces six valeurs à un réseau de neurones. Les deux sorties du réseau pilotent sa direction et sa propulsion. Après chaque génération, un algorithme de sélection et de mutation fait évoluer les poids des réseaux les mieux évalués.
 
 L’application fonctionne dans le navigateur. Elle permet de modifier la population et les paramètres d’apprentissage, de choisir ou dessiner un circuit, de suivre les résultats, d’inspecter le réseau du meilleur agent et d’archiver des cerveaux pour les comparer dans une course.
+
+## Démonstration en ligne
+
+L’application peut être essayée directement dans le navigateur, sans installation : **[ouvrir Neuro Racing](https://hajar0314.github.io/neuro-racing/)**.
+
+La vidéo ci-dessous présente le fonctionnement complet : réglages de l’entraînement, capteurs, réseau du meilleur agent, courbe d’apprentissage, éditeur de circuit, entraînement multi-circuits, archivage des cerveaux et course comparative.
+
+<p align="center"><a href="https://youtu.be/fpwgSVcrv1M"><img src="https://img.youtube.com/vi/fpwgSVcrv1M/maxresdefault.jpg" alt="Vidéo de démonstration de Neuro Racing sur YouTube" width="700"></a><br><em>Cliquer sur l’image pour lancer la vidéo sur YouTube.</em></p>
 
 ## 1. Introduction
 
@@ -112,6 +122,8 @@ La case **Debug des capteurs et distances** active des informations de diagnosti
 - indication graphique reliant le meilleur agent à son prochain checkpoint.
 
 Le mode debug sert à comprendre ce que l’agent perçoit, notamment lorsqu’il s’approche d’un mur. Il ne change pas les entrées, les poids ou les règles de décision du réseau.
+
+<p align="center"><img src="./captures/fig1_capteurs_rayons.jpg" alt="Voitures et rayons de perception sur le circuit intermédiaire" width="850"><br><em>Figure 1 — voitures de la population avec le mode debug activé : rayons de perception et distances mesurées (panneau de réglages à droite, HUD en bas).</em></p>
 
 ## 7. Réseau de neurones et commande des voitures
 
@@ -233,6 +245,10 @@ Les circuits prédéfinis sont générés à partir de points autour d’une for
 
 Pendant le dessin, les clics hors du canvas sont ignorés (un clic sur « Terminer le circuit » n’ajoute donc pas de point) et les points à moins de 7 pixels du précédent sont filtrés. Au moment de terminer, le tracé est refusé, avec un message affiché dans la barre d’édition, dans trois cas : il compte moins de 16 points, il couvre moins de 1,5 % de la surface de la fenêtre, ou il se recoupe lui-même. Un croisement unique près de la jonction (dépassement du point de départ) est corrigé automatiquement ; un croisement au milieu du tracé, comme une boucle en « 8 », est refusé : cliquer sur **Annuler** puis redessiner une boucle sans croisement. La piste acceptée est lissée, rééchantillonnée et mise à l’échelle avant que les voitures soient recréées.
 
+<p align="center"><img src="./captures/fig2_editeur_trace.jpg" alt="Éditeur de circuit pendant le tracé" width="850"><br><em>Figure 2 — éditeur de circuit : tracé libre à la souris (trait épais) et ligne médiane proposée.</em></p>
+
+<p align="center"><img src="./captures/fig3_circuit_dessine.jpg" alt="Circuit généré à partir du tracé" width="850"><br><em>Figure 3 — circuit généré à partir du tracé : bordures, checkpoints et zone de collision (en rouge) où plusieurs voitures sont éliminées.</em></p>
+
 ### Entraînement sur plusieurs circuits
 
 Un cerveau entraîné sur un seul tracé risque de ne savoir conduire que sur celui-là. Cocher **Entraîner sur plusieurs circuits** change la définition d’une génération :
@@ -250,6 +266,8 @@ tour 1 (débutant) → tour 2 (intermédiaire) → tour 3 (expert) → fitness m
 - Les cerveaux archivés gardent la liste des circuits d’entraînement (`trainedOn`, voir ARCHITECTURE.md §10.2). La liste des cerveaux l’affiche (« entraîné : débutant », « entraîné : 3 circuits »).
 - Dessiner un circuit en mode multi-circuits n’interrompt pas l’entraînement : le circuit dessiné devient le circuit de la course, idéal comme circuit inédit.
 
+<p align="center"><img src="./captures/fig4_multi_circuits.jpg" alt="Entraînement sur plusieurs circuits" width="850"><br><em>Figure 4 — option « Entraîner sur plusieurs circuits » avec les trois circuits d’entraînement (débutant, intermédiaire, expert) cochés.</em></p>
+
 ## 11. Suivi des résultats et inspection du réseau
 
 - **HUD :** indique le mode courant, le circuit, le temps écoulé (en course : le chronomètre de la course), la vitesse moyenne, les voitures encore en vie, les scores, le nombre de cycles par image, la graine de l’expérience et, en multi-circuits, le circuit de la génération. Les statistiques sont rafraîchies périodiquement plutôt qu’à chaque image.
@@ -258,6 +276,11 @@ tour 1 (débutant) → tour 2 (intermédiaire) → tour 3 (expert) → fitness m
 - **Panneaux repliables :** les visualisations ne sont actualisées que lorsqu’elles sont ouvertes, afin d’éviter des opérations de rendu inutiles en permanence.
 - **Mise en évidence du meilleur agent :** le meilleur candidat actif est choisi à partir de la fitness et, en cas d’égalité, de la distance au prochain checkpoint. Il est mis en évidence dans le canvas.
 - **Rendu visuel :** les voitures sont dessinées en monoplaces (ailerons, roues, cockpit, feux de freinage qui s’allument quand elles ralentissent) ; le leader a un halo pulsé et une traînée lumineuse. Le circuit (herbe, asphalte, vibreurs, ligne d’arrivée avec portique, arbres, pins, buissons, rochers, fleurs) est peint une seule fois dans un calque puis recopié à chaque image ; le décor est déterministe (même circuit, même décor). Il est purement visuel : les collisions utilisent les murs, jamais le décor.
+
+
+<p align="center"><img src="./captures/fig5_reseau_meilleur_agent.jpg" alt="Réseau du meilleur agent" width="850"><br><em>Figure 5 — réseau du meilleur agent : entrées (rayons et vitesse), couche cachée, sorties ; liaisons vertes = poids positifs, rouges = poids négatifs.</em></p>
+
+<p align="center"><img src="./captures/fig6_courbe_apprentissage.jpg" alt="Courbe d’apprentissage" width="850"><br><em>Figure 6 — courbe d’apprentissage (score moyen et meilleur score par génération) et bouton d’export CSV.</em></p>
 
 La courbe décrit les scores observés au cours de l’exécution actuelle ; elle ne constitue pas une garantie de convergence. Les poids affichés permettent d’inspecter la structure et les signes des connexions, mais ne suffisent pas à expliquer seuls une décision particulière : les activations dépendent aussi des entrées reçues.
 
@@ -284,6 +307,9 @@ Un fichier importé invalide ou dont les poids ont un format incorrect est refus
 3. Choisir le **Circuit de la course** (voir ci-dessous), puis cliquer sur **Lancer la course**. Les agents sélectionnés partent du même point et utilisent les réglages physiques actuels ; l’entraînement est suspendu pendant la comparaison.
 4. Observer les voitures, leur progression, les checkpoints et le HUD. Le bandeau en haut de l’écran affiche le chronomètre de la course (au centième de seconde) et le classement en direct : les voitures arrivées sont classées au temps de tour croissant, avec leur écart au premier ; les autres voitures suivent, classées par score puis par proximité du checkpoint visé, et marquées « en piste » ou « sortie ». Deux voitures arrivées avec le même temps partagent le même rang.
 5. À la fin, les premiers résultats, avec leur temps d’arrivée, sont affichés sous la liste et le classement du bandeau reste visible. Cliquer sur **Retour à l’entraînement** pour quitter la course et restaurer l’état d’entraînement précédent.
+
+
+<p align="center"><img src="./captures/fig7_course_comparative.jpg" alt="Course comparative entre cerveaux archivés" width="850"><br><em>Figure 7 — course comparative : chronomètre et classement en direct des cerveaux archivés.</em></p>
 
 ### Vérifier la généralisation : une course sur un autre circuit
 
