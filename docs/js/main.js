@@ -1343,9 +1343,6 @@ function clearBrainArchive() {
 function renderBrainList() {
     const list = document.getElementById("brainList");
     if (!list) return;
-    const previousSelection = new Set(
-        [...list.querySelectorAll("input:checked")].map(input => input.value)
-    );
     trainedBrains = brainStorage.list();
     list.replaceChildren();
     document.getElementById("brainCount").textContent = String(trainedBrains.length);
@@ -1363,7 +1360,7 @@ function renderBrainList() {
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.value = record.id;
-        checkbox.checked = selectedBrainIds.has(record.id) || previousSelection.has(record.id);
+        checkbox.checked = selectedBrainIds.has(record.id);
         checkbox.addEventListener("change", updateSelectedBrains);
 
         const name = document.createElement("span");
